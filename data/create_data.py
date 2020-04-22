@@ -47,7 +47,6 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
 DELTA_T = 0.05
 NUM_DATAPOINTS_PER_EPOCH = 50
 rng = np.random.RandomState(12345)
-IMAGE_DATASET = False
 
 
 if __name__ == '__main__':
@@ -63,6 +62,7 @@ if __name__ == '__main__':
     random_policy = RandomPolicy(seed=12831)
     sim = CartpoleSim(dt=DELTA_T)
 
+    IMAGE_DATASET = True
 
     if not IMAGE_DATASET:
         NUM_DATAPOINTS = 5000
@@ -82,51 +82,52 @@ if __name__ == '__main__':
         # method to load data
         savedData = np.loadtxt('vanilla_dataset/data.csv', delimiter=',')
 
-
     if IMAGE_DATASET:
-        NUM_TRAINING_EPOCHS = 12
+        import csv 
+        import os
+        NUM_TRAINING_EPOCHS = 1
+        PATH = "image_dataset/"
         '''
         we want image data
         '''
-        for epoch in range(NUM_TRAINING_EPOCHS):
-            vis.clear()
+        with open(PATH + "data.csv", mode='w', newline='') as csv_file:    
+            csv_writer = csv.writer(csv_file, delimiter=',')
+            for epoch in range(NUM_TRAINING_EPOCHS):
+                vis.clear()
 
-            # Use learned policy every 4th epoch
-            if (epoch + 1) % 4 == 0:
-                policy = swingup_policy
-                init_state = np.array([0.01, 0.01, 0.05, 0.05]) * rng.randn(4)
-            else:
-                policy = random_policy
-                init_state = np.array([0.01, 0.01, np.pi * 0.5, 0.1]) * rng.randn(4)
+                # Use learned policy every 4th epoch
+                if (epoch + 1) % 4 == 0:
+                    policy = swingup_policy
+                    init_state = np.array([0.01, 0.01, 0.05, 0.05]) * rng.randn(4)
+                else:
+                    policy = random_policy
+                    init_state = np.array([0.01, 0.01, np.pi * 0.5, 0.1]) * rng.randn(4)
 
-            # state_traj (aka the x values)
-            # state_traj: (50, 4)
-            ts, state_traj, action_traj = sim_rollout(sim, policy, NUM_DATAPOINTS_PER_EPOCH, DELTA_T, init_state)
-            
+                # state_traj (aka the x values)
+                # state_traj: (50, 4)
+                ts, state_traj, action_traj = sim_rollout(sim, policy, NUM_DATAPOINTS_PER_EPOCH, DELTA_T, init_state)
+                
 
-            # delta states (aka the y values?)
-            # shape: (50, 4)
-            delta_state_traj = state_traj[1:] - state_traj[:-1]
+                # delta states (aka the y values?)
+                # shape: (50, 4)
+                delta_state_traj = state_traj[1:] - state_traj[:-1]
 
-            for i in range(len(state_traj) - 1):
-                vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
-                vis.set_gt_delta_state_trajectory(ts[:i+1], delta_state_traj[:i+1])
+                for i in range(len(state_traj) - 1):
+                # for i in range(2):
+                    if i == 0 and not os.path.exists(PATH + str(epoch) + "/"):
+                        os.mkdir(PATH + str(epoch) + "/")
+                    vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
+                    vis.set_gt_delta_state_trajectory(ts[:i+1], delta_state_traj[:i+1])
 
-                # vis_img = vis.draw(redraw=(i==0))
-                vis_img = vis.draw_only_cartpole()
-                cv2.imshow('vis', vis_img)
+                    # vis_img = vis.draw(redraw=(i==0))
+                    vis_img = vis.draw_only_cartpole()
 
-                '''
-                TODO: Delete video code and insert code to 
-                save as image frames with data
-                ''' 
+                    '''
+                    TODO: Delete video code and insert code to 
+                    save as image frames with data
+                    ''' 
+                    img_path = PATH + str(epoch) + "/" + str(i) + ".jpg"
+                    cv2.imwrite(img_path, vis_img)
+                    csv_writer.writerow([delta_state_traj[i,0],delta_state_traj[i,1],delta_state_traj[i,2],delta_state_traj[i,3], img_path])
 
-                if epoch == 0 and i == 0:
-                    # First frame
-                    video_out = cv2.VideoWriter('cartpole.mp4',
-                                                cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
-                                                int(1.0 / DELTA_T),
-                                                (vis_img.shape[1], vis_img.shape[0]))
 
-                video_out.write(vis_img)
-                cv2.waitKey(int(1000 * DELTA_T))
