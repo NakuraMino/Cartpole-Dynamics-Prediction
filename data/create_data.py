@@ -62,10 +62,10 @@ if __name__ == '__main__':
     random_policy = RandomPolicy(seed=12831)
     sim = CartpoleSim(dt=DELTA_T)
 
-    IMAGE_DATASET = True
+    IMAGE_DATASET = False
 
     if not IMAGE_DATASET:
-        NUM_DATAPOINTS = 5000
+        NUM_DATAPOINTS = 11000
         '''
         we want numerical value data 
         '''
