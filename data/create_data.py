@@ -62,7 +62,7 @@ if __name__ == '__main__':
     random_policy = RandomPolicy(seed=12831)
     sim = CartpoleSim(dt=DELTA_T)
 
-    IMAGE_DATASET = False
+    IMAGE_DATASET = True
 
     if not IMAGE_DATASET:
         NUM_DATAPOINTS = 11000
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     if IMAGE_DATASET:
         import csv 
         import os
-        NUM_TRAINING_EPOCHS = 1
+        NUM_TRAINING_EPOCHS = 220 # multiply by 50 to get num. data points
         PATH = "image_dataset/"
         '''
         we want image data
