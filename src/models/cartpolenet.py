@@ -7,9 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1UmkZn_OxdUktgludHWZ4yCYBbIYfsJ3E
 """
 
-from google.colab import drive
-drive.mount('/content/drive')
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
