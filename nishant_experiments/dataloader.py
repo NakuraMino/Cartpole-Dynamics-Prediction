@@ -43,7 +43,7 @@ class CartpoleDataset(Dataset):
         imdir += '/'
 
         # Check if provided index is sensible
-        if(i >= n-2 and i <= N-2):
+        if(i >= n-2 and i <= N-2 and n >=2):
             images = []  # will hold the images
             for j in range(i-n+1, i+2):
                 im_file = imdir + self.data.iloc[j, 4]
@@ -54,7 +54,7 @@ class CartpoleDataset(Dataset):
             composite_image = cv2.hconcat(images)
             return composite_image
         else:
-            print('Index should be between {} and {}'.format(n-2, N-2))
+            print('Index should be between {} - {} (provided {}) and the number of images should be greater than or equal to 2 (provided {}).'.format(n-2, N-2, i, n))
 
 
 # This script is to be used just to load the class.
