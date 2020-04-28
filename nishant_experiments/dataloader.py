@@ -1,5 +1,7 @@
 from torch.utils.data import Dataset
+import torch
 import pandas as pd
+import numpy as np
 import cv2
 import os
 
@@ -9,15 +11,23 @@ class CartpoleDataset(Dataset):
     Cartpole dataset class
     """
 
-    def __init__(self, csv_file, path):
+    def __init__(self, csv_file, path, num_images, W=300, H=400, grayscale=True):
         """
         :arg csv_file: filename. string ('data.csv')
         :arg path: path to the csv file. string ('../data/image_dataset/')
                    (absolute path)
+        :arg num_images: # of images to be returned by get_ith_image_set()
+        :arg W: width of a single image
+        :arg H: height of a single image
+        :arg grayscale: whether grayscale images are to be stored in the dataset
         """
         self.datafile = csv_file
         self.path = path
         self.data = pd.read_csv(self.path + self.datafile, header=None)
+        self.n = num_images
+        self.W = W
+        self.H = H
+        self.grayscale = grayscale
 
     def __len__(self):
         """
@@ -27,32 +37,44 @@ class CartpoleDataset(Dataset):
         """
         return len(self.data)
 
-    def get_composite_image(self, i, n, grayscale=False):
+    def __getitem__(self, i):
         """
-        Fetches a composite image created by stitching n images
-        with i being the index of the last-second element
+        Makes the dataset object iterable.
 
         :arg i: index of the last-second image
-        :arg n: the number of images to be fetched
-        :arg grayscale: whether grayscale composite image is required
 
-        returns: a composite image by stitching n images side-by-side
+        returns: a tuple (images, delta_states)
+        - images is a 4d torch tensor carrying n images:
+            for grayscale - (n x W x H)
+            for color - (n x W x H x 3)
+          with i being the index of the last-second image.
+        - delta_states is a 2d numpy array (n x 4)
+          containing the 4 delta states for the n images
         """
         N = len(self.data)
         imdir, _ = os.path.split(self.path[:-1])
         imdir += '/'
 
+        all_delta_states = self.data.iloc[:, 0:4].to_numpy()
+
         # Check if provided index is sensible
-        if(i >= n-2 and i <= N-2 and n >=2):
-            images = []  # will hold the images
-            for j in range(i-n+1, i+2):
+        if(i >= self.n-2 and i <= N-2 and self.n >= 2):
+            delta_states = np.zeros((self.n, 4))
+            if(self.grayscale):
+                images = torch.empty(self.n, self.W, self.H, dtype=torch.uint8)
+            else:
+                images = torch.empty(self.n, self.W, self.H, 3, dtype=torch.uint8)
+            k = 0
+            for j in range(i-self.n+2, i+2):
                 im_file = imdir + self.data.iloc[j, 4]
-                if(grayscale):
-                    images.append(cv2.imread(im_file, cv2.IMREAD_GRAYSCALE))
+                if(self.grayscale):
+                    images[k] = torch.from_numpy(cv2.imread(im_file, 0))
                 else:
-                    images.append(cv2.imread(im_file, cv2.IMREAD_COLOR))
-            composite_image = cv2.hconcat(images)
-            return composite_image
+                    images[k] = torch.from_numpy(cv2.imread(im_file, 1))
+                delta_states[k] = all_delta_states[j]
+                k += 1
+            # return images
+            return (images, delta_states)
         else:
             print('Index should be between {} - {} (provided {}) and the number of images should be greater than or equal to 2 (provided {}).'.format(n-2, N-2, i, n))
 
@@ -62,7 +84,12 @@ class CartpoleDataset(Dataset):
 # (with random images from the dataset)
 if __name__ == '__main__':
     path = '/media/nishant/MyDrive/Acads/UW/2019-20/3Spring/CSE571-AI-BasedMobileRobotics/projects/project1/CSE571_Project1/data/image_dataset/'
-    dataset = CartpoleDataset('data.csv', path)
-    cv2.imshow('Composite image', dataset.get_composite_image(2, 4))
+    dataset = CartpoleDataset('data.csv', path, 4)
+    images = dataset[2][0].numpy()
+    delta_states = dataset[2][1]
+    print(delta_states)
+    cv2.imshow('Composite image', cv2.hconcat(images))
     cv2.waitKey(0)
+    import time
+    time.sleep(5)
     cv2.destroyAllWindows()
