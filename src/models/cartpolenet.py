@@ -14,15 +14,25 @@ import torch.nn.functional as F
 class CartPoleNet(nn.Module): 
   def __init__(self):
     super(CartPoleNet, self).__init__()
-    self.conv1 = nn.Conv2d(1, 6, 3)
-    self.fc1 = nn.Linear(149 * 199 * 6, 120) # resulting width x height from conv and max
+    self.conv1 = nn.Conv2d(3, 6, 3)
+    self.conv2 = nn.Conv2d(6, 16, 3)
+    self.conv3 = nn.Conv2d(16, 32, 3)
+    self.conv4 = nn.Conv2d(32, 64, 3)
+    # fully connected layers, make sure to add up images here
+    self.fc1 = nn.Linear(6 * 6 * 64, 120)
     self.fc2 = nn.Linear(120, 100)
     self.fc3 = nn.Linear(100, 50)
     self.fc4 = nn.Linear(50, 4)
 
   def forward(self, x):
     x = F.max_pool2d(F.relu(self.conv1(x)), 2) 
+    x = F.max_pool2d(F.relu(self.conv2(x)), 2) 
+    x = F.max_pool2d(F.relu(self.conv3(x)), 2) 
+    x = F.max_pool2d(F.relu(self.conv4(x)), 2)
+    # sum up along batch axis before moving onto fully connected layers
     x = x.view(-1, self.num_flat_features(x))
+    x = torch.sum(x, dim=0)
+    # fully connected layers
     x = F.relu(self.fc1(x))
     x = F.relu(self.fc2(x))
     x = F.relu(self.fc3(x))
@@ -39,27 +49,6 @@ class CartPoleNet(nn.Module):
 net = CartPoleNet()
 print(net)
 
-import cv2
-import numpy as np
-from google.colab.patches import cv2_imshow
-
-img = cv2.imread('4.jpg', 0)
-
-cv2_imshow(img)
-img = torch.from_numpy(img).unsqueeze(0).unsqueeze(0)
-
-input = torch.randn(1, 1, 300, 400)
+input = torch.randn(4, 3, 128, 128)
 out = net(input)
 print(out)
-
-print(type(input))
-print(type(img))
-
-print(input.size())
-print(img.size())
-img = img.float()
-print(input.dtype)
-print(img.dtype)
-
-out = net(img)
-
