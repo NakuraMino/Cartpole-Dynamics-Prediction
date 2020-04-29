@@ -11,7 +11,7 @@ class CartpoleDataset(Dataset):
     Cartpole dataset class
     """
 
-    def __init__(self, csv_file, path, num_images, W=300, H=400, grayscale=True):
+    def __init__(self, csv_file, path, num_images, H=400, W=300, grayscale=True):
         """
         :arg csv_file: filename. string ('data.csv')
         :arg path: path to the csv file. string ('../data/image_dataset/')
@@ -45,8 +45,8 @@ class CartpoleDataset(Dataset):
 
         returns: a tuple (images, delta_states)
         - images is a 4d torch tensor carrying n images:
-            for grayscale - (n x W x H)
-            for color - (n x W x H x 3)
+            for grayscale - (n x 1 x H x W)
+            for color - (n x 3 x H x W)
           with i being the index of the last-second image.
         - delta_states is a 2d numpy array (n x 4)
           containing the 4 delta states for the n images
@@ -61,16 +61,16 @@ class CartpoleDataset(Dataset):
         if(i >= self.n-2 and i <= N-2 and self.n >= 2):
             delta_states = np.zeros((self.n, 4))
             if(self.grayscale):
-                images = torch.empty(self.n, self.W, self.H, dtype=torch.uint8)
+                images = torch.empty(self.n, 1, self.H, self.W, dtype=torch.uint8)
             else:
-                images = torch.empty(self.n, self.W, self.H, 3, dtype=torch.uint8)
+                images = torch.empty(self.n, 3, self.H, self.W, dtype=torch.uint8)
             k = 0
             for j in range(i-self.n+2, i+2):
                 im_file = imdir + self.data.iloc[j, 4]
                 if(self.grayscale):
-                    images[k] = torch.from_numpy(cv2.imread(im_file, 0))
+                    images[k] = torch.from_numpy(cv2.imread(im_file, 0).reshape((1, self.H, self.W)))
                 else:
-                    images[k] = torch.from_numpy(cv2.imread(im_file, 1))
+                    images[k] = torch.from_numpy(np.swapaxes(cv2.imread(im_file, 1), 0, 2))
                 delta_states[k] = all_delta_states[j]
                 k += 1
             # return images
@@ -84,12 +84,6 @@ class CartpoleDataset(Dataset):
 # (with random images from the dataset)
 if __name__ == '__main__':
     path = '/media/nishant/MyDrive/Acads/UW/2019-20/3Spring/CSE571-AI-BasedMobileRobotics/projects/project1/CSE571_Project1/data/image_dataset/'
-    dataset = CartpoleDataset('data.csv', path, 4)
+    dataset = CartpoleDataset('data.csv', path, 4, grayscale=False)
     images = dataset[2][0].numpy()
-    delta_states = dataset[2][1]
-    print(delta_states)
-    cv2.imshow('Composite image', cv2.hconcat(images))
-    cv2.waitKey(0)
-    import time
-    time.sleep(5)
-    cv2.destroyAllWindows()
+    print(images.shape)
