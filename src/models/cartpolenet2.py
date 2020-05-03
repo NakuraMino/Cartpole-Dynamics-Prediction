@@ -14,7 +14,7 @@ import torch.nn.functional as F
 class CartPoleNet(nn.Module): 
   def __init__(self):
     super(CartPoleNet, self).__init__()
-    self.conv1 = nn.Conv3d(3, 6, 3, padding=1) 
+    self.conv1 = nn.Conv3d(1, 6, 3, padding=1) 
     self.conv2 = nn.Conv3d(6, 16, 3, padding=1)
     self.conv3 = nn.Conv3d(16, 32, 3, padding=1)
     self.conv4 = nn.Conv3d(32, 64, 3, padding=1)
@@ -45,11 +45,4 @@ class CartPoleNet(nn.Module):
     for s in size:
         num_features *= s
     return num_features
-
-input = torch.randn(5, 3, 5, 128, 128)
-net = CartPoleNet()
-
-out = net(input)
-
-print(out)
 
