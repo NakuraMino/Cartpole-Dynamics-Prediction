@@ -11,7 +11,7 @@ class CartpoleDataset(Dataset):
     Cartpole dataset class
     """
 
-    def __init__(self, csv_file, path, num_images, H=400, W=300, grayscale=True):
+    def __init__(self, csv_file, path, num_images, H=128, W=128, grayscale=True):
         """
         :arg csv_file: filename. string ('data.csv')
         :arg path: path to the csv file. string ('../data/image_dataset/')
