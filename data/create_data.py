@@ -121,6 +121,7 @@ if __name__ == '__main__':
 
                     # vis_img = vis.draw(redraw=(i==0))
                     vis_img = vis.draw_only_cartpole()
+                    vis_img = cv2.resize(vis_img, (128, 128))
 
                     '''
                     TODO: Delete video code and insert code to 
