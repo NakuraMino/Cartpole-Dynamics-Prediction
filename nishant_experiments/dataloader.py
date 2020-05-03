@@ -45,8 +45,8 @@ class CartpoleDataset(Dataset):
 
         returns: a tuple (images, delta_states)
         - images is a 4d torch tensor carrying n images:
-            for grayscale - (n x 1 x H x W)
-            for color - (n x 3 x H x W)
+            for grayscale - (1 x n x H x W)
+            for color - (3 x n x H x W)
           with i being the index of the last-second image.
         - delta_states is a 2d numpy array (n x 4)
           containing the 4 delta states for the n images
@@ -73,10 +73,10 @@ class CartpoleDataset(Dataset):
                     images[k] = torch.from_numpy(np.swapaxes(cv2.imread(im_file, 1), 0, 2))
                 delta_states[k] = all_delta_states[j]
                 k += 1
-            # return images
+            images = np.swapaxes(images, 0, 1)
             return (images, delta_states)
         else:
-            print('Index should be between {} - {} (provided {}) and the number of images should be greater than or equal to 2 (provided {}).'.format(n-2, N-2, i, n))
+            print('Index should be between {} - {} (provided {}) and the number of images should be greater than or equal to 2 (provided {}).'.format(self.n-2, N-2, i, self.n))
 
 
 # This script is to be used just to load the class.
@@ -84,6 +84,6 @@ class CartpoleDataset(Dataset):
 # (with random images from the dataset)
 if __name__ == '__main__':
     path = '/media/nishant/MyDrive/Acads/UW/2019-20/3Spring/CSE571-AI-BasedMobileRobotics/projects/project1/CSE571_Project1/data/image_dataset/'
-    dataset = CartpoleDataset('data.csv', path, 4, grayscale=False)
-    images = dataset[2][0].numpy()
+    dataset = CartpoleDataset('data.csv', path, 5)
+    images = dataset[4][0].numpy()
     print(images.shape)
