@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1E6ZY2qJeFhed0sUPYvToYDlSAWnljjhf
 """
 
-!unzip dataset.zip
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,8 +17,8 @@ class CartpoleNet(nn.Module):
   def __init__(self):
     super(CartpoleNet, self).__init__()
     # 6 output channels, 3x3 square convolution
-    self.conv1 = nn.Conv3d(num_channels, 6, 3)
-    self.fc1 = nn.Linear(6 * 63 * 63, 100)
+    self.conv1 = nn.Conv3d(num_channels, 6, (1, 3, 3))
+    self.fc1 = nn.Linear(6 * 2 * 63 * 63, 100)
     self.fc2 = nn.Linear(100, 50)
     self.fc3 = nn.Linear(50, 20)
     self.fc4 = nn.Linear(20, 4)
@@ -29,6 +27,7 @@ class CartpoleNet(nn.Module):
   def forward(self, x):
     # Max pooling over a (2, 2, 2) window
     x = F.max_pool3d(F.relu(self.conv1(x)), 2)
+    # print(x.shape)
     x = x.view(-1, self.num_flat_features(x))
     x = F.relu(self.fc1(x))
     x = F.relu(self.fc2(x))
@@ -56,9 +55,9 @@ class CartpoleNet(nn.Module):
 if __name__ == '__main__':
   from dataloader import CartpoleDataset
   import numpy as np
-
-  # NUM_EPOCHS = 220
-  NUM_EPOCHS = 100
+  torch.autograd.set_detect_anomaly(True)
+  NUM_EPOCHS = 220
+  # NUM_EPOCHS = 100
   LEARNING_RATE = 0.0001
   E = 50  # epoch length
   n = 5  # images per set
@@ -74,9 +73,8 @@ if __name__ == '__main__':
   net = CartpoleNet().float()
   full_dataset = CartpoleDataset('data.csv', './image_dataset/', n, grayscale=grayscale)
 
-  epoch_loss = 0
-
   for epoch in range(NUM_EPOCHS):
+    epoch_loss = 0
     print("Epoch {}".format(epoch))
     e = epoch * 50  # current epoch beginning index
     current_epoch_imageset = torch.empty(E-n+1, num_channels, n, W, H)
@@ -86,7 +84,7 @@ if __name__ == '__main__':
       current_epoch_imageset[k, :] = full_dataset[i][0]
       current_epoch_labelset[k] = torch.from_numpy(full_dataset[i][1][n-2])
     
-    criterion = nn.MSELoss()
+    criterion = nn.SmoothL1Loss()
     optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
 
     optimizer.zero_grad()
@@ -97,21 +95,18 @@ if __name__ == '__main__':
     loss.backward()
     optimizer.step()
 
+    print("Loss: {}".format(loss.item()))
     epoch_loss += loss.item()
     net.JHist.append(epoch_loss)
 
-import matplotlib.pyplot as plt
-
-plt.plot(np.linspace(0, NUM_EPOCHS-1, NUM_EPOCHS), net.JHist)
-print(net.JHist)
-plt.ylabel("Cost error")
-plt.xlabel("epoch")
-plt.grid()
-plt.show()
-
-with torch.no_grad():
-  criterion = nn.MSELoss()
-  pred_labels = net(torch.randn(10, num_channels, n, H, W))
-
-PATH = './CartpoleNet_nishant.pth'
-torch.save(net.state_dict(), PATH)
+  import matplotlib.pyplot as plt
+  
+  plt.plot(np.linspace(0, NUM_EPOCHS-1, NUM_EPOCHS), net.JHist)
+  print(net.JHist)
+  plt.ylabel("Cost error")
+  plt.xlabel("epoch")
+  plt.grid()
+  plt.show()
+  
+  PATH = './CartpoleNet_nishant.pth'
+  torch.save(net.state_dict(), PATH)
