@@ -56,9 +56,10 @@ if __name__ == '__main__':
   from dataloader import CartpoleDataset
   import numpy as np
   torch.autograd.set_detect_anomaly(True)
+
   NUM_EPOCHS = 220
   # NUM_EPOCHS = 100
-  LEARNING_RATE = 0.0001
+  LEARNING_RATE = 0.01
   E = 50  # epoch length
   n = 5  # images per set
   W = 128  # image width
@@ -74,8 +75,9 @@ if __name__ == '__main__':
   full_dataset = CartpoleDataset('data.csv', './image_dataset/', n, grayscale=grayscale)
 
   for epoch in range(NUM_EPOCHS):
-    epoch_loss = 0
-    print("Epoch {}".format(epoch))
+    # print("-"*50)
+    # print("Epoch {}".format(epoch))
+    # print("-"*50)
     e = epoch * 50  # current epoch beginning index
     current_epoch_imageset = torch.empty(E-n+1, num_channels, n, W, H)
     current_epoch_labelset = torch.empty(E-n+1, 4)
@@ -84,19 +86,24 @@ if __name__ == '__main__':
       current_epoch_imageset[k, :] = full_dataset[i][0]
       current_epoch_labelset[k] = torch.from_numpy(full_dataset[i][1][n-2])
     
-    criterion = nn.SmoothL1Loss()
-    optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
+    epoch_loss = 0
+    # Mini-batches per epoch
+    for i in range(E-n+1):
+      criterion = nn.SmoothL1Loss()
+      optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
 
-    optimizer.zero_grad()
+      optimizer.zero_grad()
 
-    pred_labelset = net(current_epoch_imageset)
+      pred_label = net(current_epoch_imageset[i].unsqueeze(0))
 
-    loss = criterion(pred_labelset, current_epoch_labelset)
-    loss.backward()
-    optimizer.step()
+      loss = criterion(pred_label, current_epoch_labelset[i].unsqueeze(0))
+      loss.backward()
+      optimizer.step()
 
-    print("Loss: {}".format(loss.item()))
-    epoch_loss += loss.item()
+      # print("Loss(epoch={}, element={}): {}".format(epoch, i, loss.item()))
+      epoch_loss += loss.item()
+    epoch_loss /= (E-n)
+    print("Epoch {} loss = {}".format(epoch, epoch_loss))
     net.JHist.append(epoch_loss)
 
   import matplotlib.pyplot as plt
