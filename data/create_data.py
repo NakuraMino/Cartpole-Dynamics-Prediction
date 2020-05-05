@@ -123,10 +123,6 @@ if __name__ == '__main__':
                     vis_img = vis.draw_only_cartpole()
                     vis_img = cv2.resize(vis_img, (128, 128))
 
-                    '''
-                    TODO: Delete video code and insert code to 
-                    save as image frames with data
-                    ''' 
                     img_path = PATH + str(epoch) + "/" + str(i) + ".jpg"
                     cv2.imwrite(img_path, vis_img)
                     csv_writer.writerow([delta_state_traj[i,0],delta_state_traj[i,1],delta_state_traj[i,2],delta_state_traj[i,3], img_path])
