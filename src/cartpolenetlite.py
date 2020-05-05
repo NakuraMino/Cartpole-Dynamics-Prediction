@@ -70,69 +70,70 @@ def create_batch(dataset, batch_size=32, epoch=0, index=0):
 
   return (train_x.double(), train_y, epoch, index)
 
-!unzip image_dataset.zip
+if __name__ == "__main__":
+  # !unzip image_dataset.zip
 
-from dataloader import CartpoleDataset 
+  from dataloader import CartpoleDataset 
 
-path = './image_dataset/'
-dataset = CartpoleDataset('data.csv', path, 5, H=128, W=128)
+  path = './image_dataset/'
+  dataset = CartpoleDataset('data.csv', path, 5, H=128, W=128)
 
-net = CartpoleNetLite().float().to("cuda")
-criterion = nn.MSELoss()
+  net = CartpoleNetLite().float().to("cuda")
+  criterion = nn.MSELoss()
 
-JHist = []
+  JHist = []
 
-optimizer = optim.Adam(net.parameters(), lr=0.01)
+  optimizer = optim.Adam(net.parameters(), lr=0.01)
 
-torch.autograd.set_detect_anomaly(True)
+  torch.autograd.set_detect_anomaly(True)
 
-# 0.05, 0.01, 0.005, 0.0005
-for i in range(1000):
-  train_x, train_y, epoch, index = create_batch(dataset, 128, epoch, index)
-  train_x = train_x.float().to("cuda")
-  train_y = train_y.float().to("cuda")
+  # 0.05, 0.01, 0.005, 0.0005
+  for i in range(1000):
+    train_x, train_y, epoch, index = create_batch(dataset, 128, epoch, index)
+    train_x = train_x.float().to("cuda")
+    train_y = train_y.float().to("cuda")
 
-  optimizer.zero_grad()
-  y_pred = net(train_x)
-  loss = criterion(y_pred, train_y)
-  loss.backward()
-  optimizer.step()
+    optimizer.zero_grad()
+    y_pred = net(train_x)
+    loss = criterion(y_pred, train_y)
+    loss.backward()
+    optimizer.step()
 
-  epoch_loss = loss.item()
-  JHist.append(epoch_loss)
-  print(i, epoch_loss)
+    epoch_loss = loss.item()
+    JHist.append(epoch_loss)
+    print(i, epoch_loss)
 
-import matplotlib.pyplot as plt
-print(JHist)
-plt.plot(JHist[230:]) # before 230 was just overfitting on one batch
-plt.xlabel("epoch")
-plt.ylabel("mean-squared error")
-plt.show()
-plt.savefig("learning_curve.png")
+  import matplotlib.pyplot as plt
+  print(JHist)
+  plt.plot(JHist[230:]) # before 230 was just overfitting on one batch
+  plt.xlabel("epoch")
+  plt.ylabel("mean-squared error")
+  plt.show()
+  plt.savefig("learning_curve.png")
 
-from google.colab import files
-PATH = './CartpoleNet3.pth'
-torch.save(net.state_dict(), PATH)
-files.download('./CartpoleNet3.pth')
-# files.download('./learning_curve.png')
+  from google.colab import files
+  PATH = './CartpoleNet3.pth'
+  torch.save(net.state_dict(), PATH)
+  files.download('./CartpoleNet3.pth')
+  # files.download('./learning_curve.png')
 
-JHist_avg = []
-ii = 0
-sum = 0
-for J in JHist:
-  if ii % 100 == 99:
-    JHist_avg.append(sum / 100)
-    sum = 0
-  else:
-    sum += J
-  ii += 1
+  JHist_avg = []
+  ii = 0
+  sum = 0
+  for J in JHist:
+    if ii % 100 == 99:
+      JHist_avg.append(sum / 100)
+      sum = 0
+    else:
+      sum += J
+    ii += 1
 
-plt.clf()
-plt.xlabel("epoch")
-plt.ylabel("mean-squared error")
-plt.title("average MSE per 100 iterations")
-plt.plot(JHist_avg[2:])
-plt.show()
+  plt.clf()
+  plt.xlabel("epoch")
+  plt.ylabel("mean-squared error")
+  plt.title("average MSE per 100 iterations")
+  plt.plot(JHist_avg[2:])
+  plt.show()
 
-index = 3
+  index = 3
 

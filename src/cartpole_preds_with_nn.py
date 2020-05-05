@@ -54,14 +54,31 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
     y = delta_state_traj
     return x, y
 
+def make_test_data(test_x):
+    '''
+    takes in a 1x50x128x128 matrix 
+
+    outputs a 46x1x5x128x128
+    '''
+    final_test_x = None
+    for i in range(46):
+        one_test_point = test_x[:,i:i+5,:,:].unsqueeze(0)
+        if final_test_x is None:
+            final_test_x = one_test_point
+        else:
+            final_test_x = torch.cat((final_test_x, one_test_point), axis=0)
+    return final_test_x.float()
+
 def predict_cartpole(test_x, init_state):
     """
-    test_x should be a series of 50x128x128 images that we can modify to pass into the neural network
+    arguments:
+    - test_x     : 46x1x5x128x128 matrix to use for the neural networks 
+    - init_State : 
     """
     from cartpolenetlite import CartpoleNetLite
 
     
-    M = train_x.shape[0]
+    M = test_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
     N = NUM_TRAJ_SAMPLES
 
@@ -70,7 +87,13 @@ def predict_cartpole(test_x, init_state):
     pred_gp_variance = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
 
+    net = CartpoleNetLite()
+    # net.load_state_dict(torch.load('./models/CartpoleNet3.pth'))
+    # net.eval()
+    output = net(test_x)
+    print(output.shape)
 
+    pred_gp_mean[4:,:] = output.detach().numpy()
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
@@ -121,18 +144,22 @@ if __name__ == '__main__':
             vis_img = vis2.draw_only_cartpole()
             vis_img = cv2.resize(vis_img, (128, 128))
             vis_img = cv2.cvtColor(vis_img, cv2.COLOR_BGR2GRAY)
+            cv2.imshow('vis', vis_img)
+            # cv2.waitKey(0)
+            vis_img = torch.Tensor(vis_img).unsqueeze(0).unsqueeze(0)
             if test_x == None:
-                test_x = torch.Tensor(vis_img)
+                test_x = vis_img
             else:
-                test_x
+                test_x = torch.cat((test_x, vis_img), axis=1)
 
+        test_x = make_test_data(test_x)
 
         (pred_gp_mean,
          pred_gp_variance,
          rollout_gp,
          pred_gp_mean_trajs,
          pred_gp_variance_trajs,
-         rollout_gp_trajs) = predict_cartpole(test_x)
+         rollout_gp_trajs) = predict_cartpole(test_x, init_state)
 
         for i in range(len(state_traj) - 1):
             vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
@@ -167,8 +194,3 @@ if __name__ == '__main__':
 
             video_out.write(vis_img)
             cv2.waitKey(int(1000 * DELTA_T))
-
-        # Augment training data
-        new_train_x, new_train_y = make_training_data(state_traj[:-1], action_traj, delta_state_traj)
-        train_x = np.concatenate([train_x, new_train_x])
-        train_y = np.concatenate([train_y, new_train_y])
