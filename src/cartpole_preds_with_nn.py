@@ -98,9 +98,9 @@ def predict_gp(train_x, train_y, init_state, action_traj):
                                This is x_t^j[k] in Algorithm 2 in the HW1 PDF.
                                It should start from t=1, i.e. rollout_gp_trajs[j,0,k] = x_1^j[k]
     """
-    from gpnet2 import GPNet
-    from gpnet3 import GPNet3
+    from cartpolenetlite import CartpoleNetLite
 
+    
     M = train_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
     N = NUM_TRAJ_SAMPLES
@@ -110,48 +110,13 @@ def predict_gp(train_x, train_y, init_state, action_traj):
     pred_gp_variance = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
 
-    model = GPNet3().double()
-    model.load_state_dict(torch.load('GPNet3.pth'))
-    model.eval()
-    savedData = np.loadtxt('info.csv', delimiter=',').T
-    model.mean = savedData[0,:]
-    model.std = savedData[1,:]
 
-    for t in range(H):
-        xt = init_state
-        if t != 0:
-            xt = rollout_gp[t-1,:]
-        xt = np.reshape(augmented_state(xt, action_traj[t]), (1, 6))
-        xt = torch.from_numpy(xt).type(torch.DoubleTensor)
-        y_pred = model(xt).detach().numpy()
-        pred_gp_mean[t,:] = y_pred
-        if t == 0:
-            rollout_gp[t,:] = init_state + y_pred
-        else:
-            rollout_gp[t,:] = rollout_gp[t - 1,:] + y_pred
+
 
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
-
-    model2 = GPNet().double()
-    model2.load_state_dict(torch.load('GPNet2.pth'))
-    model2.eval()
-
-    for j in range(1):
-        for t in range(H):
-            xt = init_state
-            if t != 0:
-                xt = rollout_gp_trajs[j,t-1,:]
-            xt = np.reshape(augmented_state(xt, action_traj[t]), (1, 6))
-            xt = torch.from_numpy(xt).type(torch.DoubleTensor)
-            y_pred = model2(xt).detach().numpy()
-            pred_gp_mean_trajs[j,t,:] = y_pred
-            if t == 0:
-                rollout_gp_trajs[j,t,:] = init_state + y_pred
-            else:
-                rollout_gp_trajs[j,t,:] = rollout_gp_trajs[j,t-1,:] + y_pred
 
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
 
