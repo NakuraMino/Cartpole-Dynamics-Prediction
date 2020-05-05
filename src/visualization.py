@@ -451,7 +451,6 @@ class Visualizer(object):
         gt_cartpole = cv2.cvtColor(self.cartpole_vis_gt.draw_cartpole('', x, theta), cv2.COLOR_RGB2BGR)
         return gt_cartpole
 
-
     def draw(self, redraw=False):
         x, theta = self.cartpole_states['gt']
         gt_cartpole = cv2.cvtColor(self.cartpole_vis_gt.draw_cartpole('', x, theta), cv2.COLOR_RGB2BGR)

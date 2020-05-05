@@ -11,15 +11,6 @@ rng = np.random.RandomState(12345)
 # State representation
 # dtheta, dx, theta, x
 
-kernel_length_scales = np.array([[240.507, 242.9594, 218.0256, 203.0197],
-                                 [175.9314, 176.8396, 178.0185, 33.0219],
-                                 [7.4687, 7.3903, 13.0914, 34.6307],
-                                 [0.8433, 1.0499, 1.2963, 2.3903],
-                                 [0.781, 0.9858, 1.7216, 31.2894],
-                                 [23.1603, 24.6355, 49.9782, 219.185]])
-kernel_scale_factors = np.array([3.5236, 1.3658, 0.7204, 1.1478])
-noise_sigmas = np.array([0.0431, 0.0165, 0.0145, 0.0143])
-
 def sim_rollout(sim, policy, n_steps, dt, init_state):
     """
     :param sim: the simulator
@@ -63,40 +54,9 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
     y = delta_state_traj
     return x, y
 
-def predict_gp(train_x, train_y, init_state, action_traj):
+def predict_cartpole(test_x, init_state):
     """
-    Let M be the number of training examples
-    Let H be the length of an epoch (NUM_DATAPOINTS_PER_EPOCH)
-    Let N be the number of trajectories (NUM_TRAJ_SAMPLES)
-
-    NOTE: Please use rng.normal(mu, sigma) to generate Gaussian random noise.
-          https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.random.RandomState.normal.html
-
-
-    :param train_x: a numpy array of size [M x 6]
-    :param train_y: a numpy array of size [M x 4]
-    :param init_state: a numpy array of size [4]. Initial state of current epoch.
-                       Use this to generate rollouts.
-    :param action_traj: a numpy array of size [M] -- should be H
-
-    :return: 
-             # This is the mean rollout 
-             pred_gp_mean: a numpy array of size [H x 4]
-                           This is mu_t[k] in Algorithm 1 in the HW1 PDF.
-             pred_gp_variance: a numpy array of size [H x 4]. 
-                               This is sigma_t[k] in Algorithm 1 in the HW1 PDF.
-             rollout_gp: a numpy array of size [H x 4]
-                         This is x_t[k] in Algorithm 1 in the HW1 PDF.
-                         It should start from t=1, i.e. rollout_gp[0,k] = x_1[k]
-        
-             # These are the sampled rollouts
-             pred_gp_mean_trajs: a numpy array of size [N x H x 4]
-                                 This is mu_t^j[k] in Algorithm 2 in the HW1 PDF.
-             pred_gp_variance_trajs: a numpy array of size [N x H x 4]
-                                     This is sigma_t^j[k] in Algorithm 2 in the HW1 PDF.
-             rollout_gp_trajs: a numpy array of size [N x H x 4]
-                               This is x_t^j[k] in Algorithm 2 in the HW1 PDF.
-                               It should start from t=1, i.e. rollout_gp_trajs[j,0,k] = x_1^j[k]
+    test_x should be a series of 50x128x128 images that we can modify to pass into the neural network
     """
     from cartpolenetlite import CartpoleNetLite
 
@@ -109,8 +69,6 @@ def predict_gp(train_x, train_y, init_state, action_traj):
     pred_gp_mean = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
-
-
 
 
 
@@ -129,6 +87,8 @@ if __name__ == '__main__':
     import cv2
 
     vis = Visualizer(cartpole_length=1.5, x_lim=(0.0, DELTA_T * NUM_DATAPOINTS_PER_EPOCH))
+    vis2 = Visualizer(cartpole_length=1.5, x_lim=(0.0, DELTA_T * NUM_DATAPOINTS_PER_EPOCH)) # use to create test_x
+    
     swingup_policy = SwingUpAndBalancePolicy('policy.npz')
     random_policy = RandomPolicy(seed=12831)
     sim = CartpoleSim(dt=DELTA_T)
@@ -137,11 +97,11 @@ if __name__ == '__main__':
     init_state = np.array([0.01, 0.01, np.pi * 0.5, 0.1]) * rng.randn(4)
     ts, state_traj, action_traj = sim_rollout(sim, random_policy, NUM_DATAPOINTS_PER_EPOCH, DELTA_T, init_state)
     delta_state_traj = state_traj[1:] - state_traj[:-1]
-    train_x, train_y = make_training_data(state_traj[:-1], action_traj, delta_state_traj)
+    test_x = None
 
     for epoch in range(NUM_TRAINING_EPOCHS):
         vis.clear()
-
+        vis2.clear()
         # Use learned policy every 4th epoch
         if (epoch + 1) % 4 == 0:
             policy = swingup_policy
@@ -153,12 +113,26 @@ if __name__ == '__main__':
         ts, state_traj, action_traj = sim_rollout(sim, policy, NUM_DATAPOINTS_PER_EPOCH, DELTA_T, init_state)
         delta_state_traj = state_traj[1:] - state_traj[:-1]
 
+        test_x = None
+        for i in range(len(state_traj) - 1):
+            vis2.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
+            vis2.set_gt_delta_state_trajectory(ts[:i+1], delta_state_traj[:i+1])
+
+            vis_img = vis2.draw_only_cartpole()
+            vis_img = cv2.resize(vis_img, (128, 128))
+            vis_img = cv2.cvtColor(vis_img, cv2.COLOR_BGR2GRAY)
+            if test_x == None:
+                test_x = torch.Tensor(vis_img)
+            else:
+                test_x
+
+
         (pred_gp_mean,
          pred_gp_variance,
          rollout_gp,
          pred_gp_mean_trajs,
          pred_gp_variance_trajs,
-         rollout_gp_trajs) = predict_gp(train_x, train_y, state_traj[0], action_traj)
+         rollout_gp_trajs) = predict_cartpole(test_x)
 
         for i in range(len(state_traj) - 1):
             vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
