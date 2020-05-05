@@ -1,0 +1,8 @@
+CartpoleNet3.pth:
+only trains for around 7000 iterations and also performs poorly. It uses Adam optimizer with an initial learning rate of 0.01
+
+
+CartpoleNet4.pth:
+After trying out CartpoleNet3.pth, I saw that it performed really poorly, so I loaded up Cartpole3.pth into Google Colab, and trained on it more. 
+For CartpoleNet4.pth, I started out with a learning rate of 0.00001 and trained it for 5000 iterations (and still counting). 
+

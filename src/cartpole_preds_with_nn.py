@@ -77,7 +77,8 @@ def predict_cartpole(test_x, init_state):
     """
     
     # TODO: import the file that contains your network architecture
-    # ex: from cartpolenetlite import CartpoleNetLite
+    
+    from cartpolenetlite import CartpoleNetLite
 
     M = test_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
@@ -90,11 +91,12 @@ def predict_cartpole(test_x, init_state):
 
     # TODO: Declare your network and run test_x through your data
     # ex:
-    #   net = CartpoleNetLite() 
-    #   net.load_state_dict(torch.load('./models/CartpoleNet3.pth')) # loads the trained nn
-    #   net.eval()                               
-    #   output = net(test_x) # predicts output based on the input we gave
-    #   pred_gp_mean[4:,:] = output.detach().numpy() # stores the values onto pred_gp_mean
+    
+    net = CartpoleNetLite() 
+    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    net.eval()
+    output = net(test_x) # predicts output based on the input we gave
+    pred_gp_mean[4:,:] = output.detach().numpy() # stores the values onto pred_gp_mean
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
@@ -145,8 +147,6 @@ if __name__ == '__main__':
             vis_img = vis2.draw_only_cartpole()
             vis_img = cv2.resize(vis_img, (128, 128))
             vis_img = cv2.cvtColor(vis_img, cv2.COLOR_BGR2GRAY)
-            cv2.imshow('vis', vis_img)
-            # cv2.waitKey(0)
             vis_img = torch.Tensor(vis_img).unsqueeze(0).unsqueeze(0)
             if test_x == None:
                 test_x = vis_img
