@@ -75,9 +75,10 @@ def predict_cartpole(test_x, init_state):
     - test_x     : 46x1x5x128x128 matrix to use for the neural networks 
     - init_State : 
     """
-    from cartpolenetlite import CartpoleNetLite
-
     
+    # TODO: import the file that contains your network architecture
+    # ex: from cartpolenetlite import CartpoleNetLite
+
     M = test_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
     N = NUM_TRAJ_SAMPLES
@@ -87,13 +88,13 @@ def predict_cartpole(test_x, init_state):
     pred_gp_variance = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
 
-    net = CartpoleNetLite()
-    # net.load_state_dict(torch.load('./models/CartpoleNet3.pth'))
-    # net.eval()
-    output = net(test_x)
-    print(output.shape)
-
-    pred_gp_mean[4:,:] = output.detach().numpy()
+    # TODO: Declare your network and run test_x through your data
+    # ex:
+    #   net = CartpoleNetLite() 
+    #   net.load_state_dict(torch.load('./models/CartpoleNet3.pth')) # loads the trained nn
+    #   net.eval()                               
+    #   output = net(test_x) # predicts output based on the input we gave
+    #   pred_gp_mean[4:,:] = output.detach().numpy() # stores the values onto pred_gp_mean
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
