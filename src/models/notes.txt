@@ -1,2 +1,2 @@
 CartpoleNet3.pth:
-Trained for about 12k iterations so far. Uses an initial Adam optimizer with a learning rate of 0.01 (First 5K iterations). Saw that it performed poorly, so trained for about another 7K iterations. Trained for an additional 5K epochs. Now waiting for 10K more epochs to train.
+Trained for about 12k iterations so far. Uses an initial Adam optimizer with a learning rate of 0.01 (First 5K iterations). Saw that it performed poorly, so trained for about another 7K iterations. Trained for an additional 5K epochs. Finally trained on 10K more epochs.

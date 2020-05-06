@@ -96,7 +96,7 @@ def predict_cartpole(test_x, init_state):
     net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
     net.eval()
     output = net(test_x) # predicts output based on the input we gave
-    pred_gp_mean[4:,:] = output.detach().numpy() # stores the values onto pred_gp_mean
+    pred_gp_mean[3:49,:] = output.detach().numpy() # stores the values onto pred_gp_mean
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
