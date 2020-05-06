@@ -109,8 +109,11 @@ def predict_cartpole(test_x, init_state):
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
 
 
-if __name__ == '__main__':
+if __name__ != '__main__':
     # TODO: write scripts for this?
+    '''
+    CODE FOR TEST PURPOSES ONLY: compares the training loss with the test loss of the CNN
+    '''
     import torch.nn as nn
     from cartpolenetlite import CartpoleNetLite
     import sys
@@ -151,7 +154,7 @@ if __name__ == '__main__':
     print("test loss:", loss.item())
 
 
-if __name__ != '__main__':
+if __name__ == '__main__':
     import matplotlib.pyplot as plt
     plt.style.use('ggplot')
     from cartpole_sim import CartpoleSim
