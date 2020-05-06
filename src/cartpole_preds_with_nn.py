@@ -108,7 +108,50 @@ def predict_cartpole(test_x, init_state):
 
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
 
+
 if __name__ == '__main__':
+    # TODO: write scripts for this?
+    import torch.nn as nn
+    from cartpolenetlite import CartpoleNetLite
+    import sys
+    sys.path.insert(1, '../nishant_experiments/')
+    from dataloader import CartpoleDataset
+
+    path = '../data/image_dataset/'
+    training_dataset = CartpoleDataset('data.csv', path, 5, H=128, W=128)
+
+    path2 = '../data/image_test_dataset/'
+    testing_dataset = CartpoleDataset('data.csv', path2, 5, H=128, W=128)
+    
+    criterion = nn.MSELoss()
+    net = CartpoleNetLite() 
+    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    net.eval()
+
+    epoch = np.random.randint(0, 100)
+    train_x, train_y = training_dataset[epoch * 50 + 3][0].unsqueeze(0), torch.tensor(training_dataset[epoch * 50 + 3][1][-2, :]).unsqueeze(0)
+    test_x, test_y = testing_dataset[3][0].unsqueeze(0), torch.tensor(testing_dataset[3][1][-2, :]).unsqueeze(0)
+    for i in range(1, 46): 
+        train_x = torch.cat((training_dataset[epoch * 50 + 3 + i][0].unsqueeze(0), train_x), axis=0)
+        train_y = torch.cat((torch.tensor(training_dataset[epoch * 50 + 3 + i][1][-2, :]).unsqueeze(0), train_y), axis=0)
+
+        test_x = torch.cat((testing_dataset[3][0].unsqueeze(0), test_x), axis=0)
+        test_y = torch.cat((torch.tensor(testing_dataset[3][1][-2, :]).unsqueeze(0), test_y), axis=0)
+    
+    train_x = train_x.float()
+    test_x = test_x.float()
+
+    train_y_pred = net(train_x)
+    test_y_pred = net(test_x)
+
+    loss = criterion(train_y_pred, train_y)
+    print("train loss:", loss.item())
+
+    loss = criterion(test_y_pred, test_y)
+    print("test loss:", loss.item())
+
+
+if __name__ != '__main__':
     import matplotlib.pyplot as plt
     plt.style.use('ggplot')
     from cartpole_sim import CartpoleSim
