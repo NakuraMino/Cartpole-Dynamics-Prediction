@@ -155,6 +155,40 @@ def predict_gp(train_x, train_y, init_state, action_traj):
 
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
 
+
+if __name__ != '__main__':
+    # test the GPNet accuracy using MSE Loss.
+    from gpnet3 import GPNet3
+    import torch.nn as nn
+    
+    testData = torch.tensor(np.loadtxt('../data/vanilla_test_dataset/data.csv', delimiter=','))
+    trainData = np.loadtxt('../data/vanilla_dataset/data.csv', delimiter=',')
+    np.random.shuffle(trainData)
+    trainData = trainData[:100,:] # randomly select 100 training data points
+    trainData = torch.tensor(trainData)
+
+    train_x, train_y = trainData[:,:6] , trainData[:,6:]
+    test_x, test_y = testData[:,:6] , testData[:,6:]
+
+    criterion = nn.MSELoss()
+
+    model = GPNet3().double()
+    model.load_state_dict(torch.load('GPNet3.pth'))
+    model.eval()
+    savedData = np.loadtxt('info.csv', delimiter=',').T
+    model.mean = savedData[0,:]
+    model.std = savedData[1,:]
+
+    train_pred = model(train_x)
+    test_pred = model(test_x)
+
+    loss = criterion(train_pred, train_y)
+    print("training loss:", loss.item())
+
+    loss = criterion(test_pred, test_y)
+    print("test loss:", loss.item())
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     plt.style.use('ggplot')
