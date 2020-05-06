@@ -73,7 +73,7 @@ def predict_cartpole(test_x, init_state):
     """
     arguments:
     - test_x     : 46x1x5x128x128 matrix to use for the neural networks 
-    - init_State : 
+    - init_State : the state of the cartpole at the 4th time step (because the neural network does not predict the states from time t=0-2)
     """
     
     # TODO: import the file that contains your network architecture
@@ -97,6 +97,10 @@ def predict_cartpole(test_x, init_state):
     net.eval()
     output = net(test_x) # predicts output based on the input we gave
     pred_gp_mean[3:49,:] = output.detach().numpy() # stores the values onto pred_gp_mean
+    rollout_gp[2,:] = init_state
+    for i in range(3, 50):
+        # uuhhh did i do something wrong here... it looks right?
+        rollout_gp[i,:] = pred_gp_mean[i-1,:] + rollout_gp[i-1,:]
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
@@ -160,7 +164,7 @@ if __name__ == '__main__':
          rollout_gp,
          pred_gp_mean_trajs,
          pred_gp_variance_trajs,
-         rollout_gp_trajs) = predict_cartpole(test_x, init_state)
+         rollout_gp_trajs) = predict_cartpole(test_x, state_traj[1,:])
 
         for i in range(len(state_traj) - 1):
             vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
