@@ -11,15 +11,6 @@ rng = np.random.RandomState(12345)
 # State representation
 # dtheta, dx, theta, x
 
-kernel_length_scales = np.array([[240.507, 242.9594, 218.0256, 203.0197],
-                                 [175.9314, 176.8396, 178.0185, 33.0219],
-                                 [7.4687, 7.3903, 13.0914, 34.6307],
-                                 [0.8433, 1.0499, 1.2963, 2.3903],
-                                 [0.781, 0.9858, 1.7216, 31.2894],
-                                 [23.1603, 24.6355, 49.9782, 219.185]])
-kernel_scale_factors = np.array([3.5236, 1.3658, 0.7204, 1.1478])
-noise_sigmas = np.array([0.0431, 0.0165, 0.0145, 0.0143])
-
 def sim_rollout(sim, policy, n_steps, dt, init_state):
     """
     :param sim: the simulator
@@ -63,45 +54,31 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
     y = delta_state_traj
     return x, y
 
-def predict_gp(train_x, train_y, init_state, action_traj):
+
+def make_test_data(test_x):
+    '''
+    takes in a 1x50x128x128 matrix 
+    outputs a 46x1x5x128x128
+    '''
+    final_test_x = None
+    for i in range(46):
+        one_test_point = test_x[:,i:i+5,:,:].unsqueeze(0)
+        if final_test_x is None:
+            final_test_x = one_test_point
+        else:
+            final_test_x = torch.cat((final_test_x, one_test_point), axis=0)
+    return final_test_x.float()
+
+def predict_cartpole(test_x, init_state):
     """
-    Let M be the number of training examples
-    Let H be the length of an epoch (NUM_DATAPOINTS_PER_EPOCH)
-    Let N be the number of trajectories (NUM_TRAJ_SAMPLES)
-
-    NOTE: Please use rng.normal(mu, sigma) to generate Gaussian random noise.
-          https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.random.RandomState.normal.html
-
-
-    :param train_x: a numpy array of size [M x 6]
-    :param train_y: a numpy array of size [M x 4]
-    :param init_state: a numpy array of size [4]. Initial state of current epoch.
-                       Use this to generate rollouts.
-    :param action_traj: a numpy array of size [M] -- should be H
-
-    :return: 
-             # This is the mean rollout 
-             pred_gp_mean: a numpy array of size [H x 4]
-                           This is mu_t[k] in Algorithm 1 in the HW1 PDF.
-             pred_gp_variance: a numpy array of size [H x 4]. 
-                               This is sigma_t[k] in Algorithm 1 in the HW1 PDF.
-             rollout_gp: a numpy array of size [H x 4]
-                         This is x_t[k] in Algorithm 1 in the HW1 PDF.
-                         It should start from t=1, i.e. rollout_gp[0,k] = x_1[k]
-        
-             # These are the sampled rollouts
-             pred_gp_mean_trajs: a numpy array of size [N x H x 4]
-                                 This is mu_t^j[k] in Algorithm 2 in the HW1 PDF.
-             pred_gp_variance_trajs: a numpy array of size [N x H x 4]
-                                     This is sigma_t^j[k] in Algorithm 2 in the HW1 PDF.
-             rollout_gp_trajs: a numpy array of size [N x H x 4]
-                               This is x_t^j[k] in Algorithm 2 in the HW1 PDF.
-                               It should start from t=1, i.e. rollout_gp_trajs[j,0,k] = x_1^j[k]
+    arguments:
+    - test_x     : 46x1x5x128x128 matrix to use for the neural networks 
+    - init_State : the state of the cartpole at the 4th time step (because the neural network does not predict the states from time t=0-2)
     """
-    from gpnet2 import GPNet
-    from gpnet3 import GPNet3
+    
+    # TODO: import the file that contains your network architecture
 
-    M = train_x.shape[0]
+    M = test_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
     N = NUM_TRAJ_SAMPLES
 
@@ -110,50 +87,90 @@ def predict_gp(train_x, train_y, init_state, action_traj):
     pred_gp_variance = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp = np.zeros((NUM_DATAPOINTS_PER_EPOCH, 4))
 
-    model = GPNet3().double()
-    model.load_state_dict(torch.load('GPNet3.pth'))
-    model.eval()
-    savedData = np.loadtxt('info.csv', delimiter=',').T
-    model.mean = savedData[0,:]
-    model.std = savedData[1,:]
-
-    for t in range(H):
-        xt = init_state
-        if t != 0:
-            xt = rollout_gp[t-1,:]
-        xt = np.reshape(augmented_state(xt, action_traj[t]), (1, 6))
-        xt = torch.from_numpy(xt).type(torch.DoubleTensor)
-        y_pred = model(xt).detach().numpy()
-        pred_gp_mean[t,:] = y_pred
-        if t == 0:
-            rollout_gp[t,:] = init_state + y_pred
-        else:
-            rollout_gp[t,:] = rollout_gp[t - 1,:] + y_pred
-
+    # TODO: Declare your network and run test_x through your data
+    # ex:
+    
+    NN = 'three'
+    # lite, lite-er, heavy, four
+    if NN == 'lite':
+        from cartpolenetlite import CartpoleNetLite
+        net = CartpoleNetLite()
+        net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'lite-er':
+        from cartpolenetlite_er import CartpoleNetLite_er
+        net = CartpoleNetLite_er()
+        net.load_state_dict(torch.load('./models/CartpoleNetLite_er.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'heavy':
+        from cartpolenet_heavy import CartpoleNetHeavy
+        net = CartpoleNetHeavy()
+        net.load_state_dict(torch.load('./models/CartpoleNetHeavy.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'four':
+        from cartFourNet import CartFourNet
+        net = CartFourNet()
+        net.load_state_dict(torch.load('./models/CartFourNet.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'three':
+        from cartThreeNet import CartThreeNet
+        net = CartThreeNet()
+        net.load_state_dict(torch.load('./models/CartThreeNet.pth', map_location="cpu"))  # loads the trained nn
+    net.eval()
+    output = net(test_x) # predicts output based on the input we gave
+    pred_gp_mean[3:49,:] = output.detach().numpy() # stores the values onto pred_gp_mean
+    rollout_gp[2,:] = init_state
+    for i in range(3, 50):
+        # uuhhh did i do something wrong here... it looks right?
+        rollout_gp[i,:] = pred_gp_mean[i-1,:] + rollout_gp[i-1,:]
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
 
-    model2 = GPNet().double()
-    model2.load_state_dict(torch.load('GPNet2.pth'))
-    model2.eval()
-
-    for j in range(1):
-        for t in range(H):
-            xt = init_state
-            if t != 0:
-                xt = rollout_gp_trajs[j,t-1,:]
-            xt = np.reshape(augmented_state(xt, action_traj[t]), (1, 6))
-            xt = torch.from_numpy(xt).type(torch.DoubleTensor)
-            y_pred = model2(xt).detach().numpy()
-            pred_gp_mean_trajs[j,t,:] = y_pred
-            if t == 0:
-                rollout_gp_trajs[j,t,:] = init_state + y_pred
-            else:
-                rollout_gp_trajs[j,t,:] = rollout_gp_trajs[j,t-1,:] + y_pred
-
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
+
+
+if __name__ != '__main__':
+    # TODO: write scripts for this?
+    '''
+    CODE FOR TEST PURPOSES ONLY: compares the training loss with the test loss of the CNN
+    '''
+    import torch.nn as nn
+    from cartpolenetlite import CartpoleNetLite
+    import sys
+    sys.path.insert(1, '../nishant_experiments/')
+    from dataloader import CartpoleDataset
+
+    path = '../data/image_dataset/'
+    training_dataset = CartpoleDataset('data.csv', path, 5, H=128, W=128)
+
+    path2 = '../data/image_test_dataset/'
+    testing_dataset = CartpoleDataset('data.csv', path2, 5, H=128, W=128)
+    
+    criterion = nn.MSELoss()
+    net = CartpoleNetLite() 
+    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    net.eval()
+
+    epoch = np.random.randint(0, 100)
+    train_x, train_y = training_dataset[epoch * 50 + 3][0].unsqueeze(0), torch.tensor(training_dataset[epoch * 50 + 3][1][-2, :]).unsqueeze(0)
+    test_x, test_y = testing_dataset[3][0].unsqueeze(0), torch.tensor(testing_dataset[3][1][-2, :]).unsqueeze(0)
+    for i in range(1, 46): 
+        train_x = torch.cat((training_dataset[epoch * 50 + 3 + i][0].unsqueeze(0), train_x), axis=0)
+        train_y = torch.cat((torch.tensor(training_dataset[epoch * 50 + 3 + i][1][-2, :]).unsqueeze(0), train_y), axis=0)
+
+        test_x = torch.cat((testing_dataset[3][0].unsqueeze(0), test_x), axis=0)
+        test_y = torch.cat((torch.tensor(testing_dataset[3][1][-2, :]).unsqueeze(0), test_y), axis=0)
+    
+    train_x = train_x.float()
+    test_x = test_x.float()
+
+    train_y_pred = net(train_x)
+    test_y_pred = net(test_x)
+
+    loss = criterion(train_y_pred, train_y)
+    print("train loss:", loss.item())
+
+    loss = criterion(test_y_pred, test_y)
+    print("test loss:", loss.item())
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -164,6 +181,8 @@ if __name__ == '__main__':
     import cv2
 
     vis = Visualizer(cartpole_length=1.5, x_lim=(0.0, DELTA_T * NUM_DATAPOINTS_PER_EPOCH))
+    vis2 = Visualizer(cartpole_length=1.5, x_lim=(0.0, DELTA_T * NUM_DATAPOINTS_PER_EPOCH)) # use to create test_x
+    
     swingup_policy = SwingUpAndBalancePolicy('policy.npz')
     random_policy = RandomPolicy(seed=12831)
     sim = CartpoleSim(dt=DELTA_T)
@@ -172,11 +191,11 @@ if __name__ == '__main__':
     init_state = np.array([0.01, 0.01, np.pi * 0.5, 0.1]) * rng.randn(4)
     ts, state_traj, action_traj = sim_rollout(sim, random_policy, NUM_DATAPOINTS_PER_EPOCH, DELTA_T, init_state)
     delta_state_traj = state_traj[1:] - state_traj[:-1]
-    train_x, train_y = make_training_data(state_traj[:-1], action_traj, delta_state_traj)
+    test_x = None
 
     for epoch in range(NUM_TRAINING_EPOCHS):
         vis.clear()
-
+        vis2.clear()
         # Use learned policy every 4th epoch
         if (epoch + 1) % 4 == 0:
             policy = swingup_policy
@@ -188,12 +207,28 @@ if __name__ == '__main__':
         ts, state_traj, action_traj = sim_rollout(sim, policy, NUM_DATAPOINTS_PER_EPOCH, DELTA_T, init_state)
         delta_state_traj = state_traj[1:] - state_traj[:-1]
 
+        test_x = None
+        for i in range(len(state_traj) - 1):
+            vis2.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
+            vis2.set_gt_delta_state_trajectory(ts[:i+1], delta_state_traj[:i+1])
+
+            vis_img = vis2.draw_only_cartpole()
+            vis_img = cv2.resize(vis_img, (128, 128))
+            vis_img = cv2.cvtColor(vis_img, cv2.COLOR_BGR2GRAY)
+            vis_img = torch.Tensor(vis_img).unsqueeze(0).unsqueeze(0)
+            if test_x == None:
+                test_x = vis_img
+            else:
+                test_x = torch.cat((test_x, vis_img), axis=1)
+
+        test_x = make_test_data(test_x)
+
         (pred_gp_mean,
          pred_gp_variance,
          rollout_gp,
          pred_gp_mean_trajs,
          pred_gp_variance_trajs,
-         rollout_gp_trajs) = predict_gp(train_x, train_y, state_traj[0], action_traj)
+         rollout_gp_trajs) = predict_cartpole(test_x, state_traj[1,:])
 
         for i in range(len(state_traj) - 1):
             vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])
@@ -228,8 +263,3 @@ if __name__ == '__main__':
 
             video_out.write(vis_img)
             cv2.waitKey(int(1000 * DELTA_T))
-
-        # Augment training data
-        new_train_x, new_train_y = make_training_data(state_traj[:-1], action_traj, delta_state_traj)
-        train_x = np.concatenate([train_x, new_train_x])
-        train_y = np.concatenate([train_y, new_train_y])
