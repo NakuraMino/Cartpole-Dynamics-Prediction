@@ -1,0 +1,17 @@
+while working on our project, we realized several limitations to our neural networks 
+
+First, we cannot make predictions at the beginning of an epoch or at the end because our neural network requires a sequence of before and after images 
+
+Second, due to how the test data is structured, our network cannot make predictions on it's previous predictions, unlike gaussian processes.
+This is because we take in an "after" image as input as well. 
+
+ Third, we see our network performing poorly when the cartpole is at a standstill. As can be seen in the graph, the acceleration oscillates a lot, 
+but our network does not capture this well. This is either because a sequence of standstill images do not provide enough information, or because 
+the network sees less training data for the swing up policy.
+
+Finally, we see that more images provide better predictions, especially in the second derivative graphs. 
+
+Through this project, we gained first hand experience on deep learning. We learned about the intricacies of how to create a dataset and transform it into 
+data to feed into the neural networks, and we also learned about the different hyperparameter choices we can make for the neural networks.
+
+We would also like to thank the course staff and the online forums, as well as several other resources we used to figure out our project. 
