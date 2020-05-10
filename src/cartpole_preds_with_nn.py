@@ -73,11 +73,12 @@ def predict_cartpole(test_x, init_state):
     """
     arguments:
     - test_x     : 46x1x5x128x128 matrix to use for the neural networks 
-    - init_State : 
+    - init_State : the state of the cartpole at the 4th time step (because the neural network does not predict the states from time t=0-2)
     """
     
     # TODO: import the file that contains your network architecture
-    # ex: from cartpolenetlite import CartpoleNetLite
+    
+    from cartpolenetlite import CartpoleNetLite
 
     M = test_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
@@ -90,17 +91,68 @@ def predict_cartpole(test_x, init_state):
 
     # TODO: Declare your network and run test_x through your data
     # ex:
-    #   net = CartpoleNetLite() 
-    #   net.load_state_dict(torch.load('./models/CartpoleNet3.pth')) # loads the trained nn
-    #   net.eval()                               
-    #   output = net(test_x) # predicts output based on the input we gave
-    #   pred_gp_mean[4:,:] = output.detach().numpy() # stores the values onto pred_gp_mean
+    
+    net = CartpoleNetLite() 
+    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    net.eval()
+    output = net(test_x) # predicts output based on the input we gave
+    pred_gp_mean[3:49,:] = output.detach().numpy() # stores the values onto pred_gp_mean
+    rollout_gp[2,:] = init_state
+    for i in range(3, 50):
+        # uuhhh did i do something wrong here... it looks right?
+        rollout_gp[i,:] = pred_gp_mean[i-1,:] + rollout_gp[i-1,:]
 
     pred_gp_mean_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     pred_gp_variance_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
     rollout_gp_trajs = np.zeros((NUM_TRAJ_SAMPLES, NUM_DATAPOINTS_PER_EPOCH, 4))
 
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
+
+
+if __name__ != '__main__':
+    # TODO: write scripts for this?
+    '''
+    CODE FOR TEST PURPOSES ONLY: compares the training loss with the test loss of the CNN
+    '''
+    import torch.nn as nn
+    from cartpolenetlite import CartpoleNetLite
+    import sys
+    sys.path.insert(1, '../nishant_experiments/')
+    from dataloader import CartpoleDataset
+
+    path = '../data/image_dataset/'
+    training_dataset = CartpoleDataset('data.csv', path, 5, H=128, W=128)
+
+    path2 = '../data/image_test_dataset/'
+    testing_dataset = CartpoleDataset('data.csv', path2, 5, H=128, W=128)
+    
+    criterion = nn.MSELoss()
+    net = CartpoleNetLite() 
+    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    net.eval()
+
+    epoch = np.random.randint(0, 100)
+    train_x, train_y = training_dataset[epoch * 50 + 3][0].unsqueeze(0), torch.tensor(training_dataset[epoch * 50 + 3][1][-2, :]).unsqueeze(0)
+    test_x, test_y = testing_dataset[3][0].unsqueeze(0), torch.tensor(testing_dataset[3][1][-2, :]).unsqueeze(0)
+    for i in range(1, 46): 
+        train_x = torch.cat((training_dataset[epoch * 50 + 3 + i][0].unsqueeze(0), train_x), axis=0)
+        train_y = torch.cat((torch.tensor(training_dataset[epoch * 50 + 3 + i][1][-2, :]).unsqueeze(0), train_y), axis=0)
+
+        test_x = torch.cat((testing_dataset[3][0].unsqueeze(0), test_x), axis=0)
+        test_y = torch.cat((torch.tensor(testing_dataset[3][1][-2, :]).unsqueeze(0), test_y), axis=0)
+    
+    train_x = train_x.float()
+    test_x = test_x.float()
+
+    train_y_pred = net(train_x)
+    test_y_pred = net(test_x)
+
+    loss = criterion(train_y_pred, train_y)
+    print("train loss:", loss.item())
+
+    loss = criterion(test_y_pred, test_y)
+    print("test loss:", loss.item())
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -145,8 +197,6 @@ if __name__ == '__main__':
             vis_img = vis2.draw_only_cartpole()
             vis_img = cv2.resize(vis_img, (128, 128))
             vis_img = cv2.cvtColor(vis_img, cv2.COLOR_BGR2GRAY)
-            cv2.imshow('vis', vis_img)
-            # cv2.waitKey(0)
             vis_img = torch.Tensor(vis_img).unsqueeze(0).unsqueeze(0)
             if test_x == None:
                 test_x = vis_img
@@ -160,7 +210,7 @@ if __name__ == '__main__':
          rollout_gp,
          pred_gp_mean_trajs,
          pred_gp_variance_trajs,
-         rollout_gp_trajs) = predict_cartpole(test_x, init_state)
+         rollout_gp_trajs) = predict_cartpole(test_x, state_traj[1,:])
 
         for i in range(len(state_traj) - 1):
             vis.set_gt_cartpole_state(state_traj[i][3], state_traj[i][2])

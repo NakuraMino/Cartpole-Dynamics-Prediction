@@ -44,9 +44,10 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
     return x, y
 
 # Global variables
+import random
 DELTA_T = 0.05
 NUM_DATAPOINTS_PER_EPOCH = 50
-rng = np.random.RandomState(12345)
+rng = np.random.RandomState(random.randint(1, 100000))
 
 
 if __name__ == '__main__':
@@ -56,16 +57,17 @@ if __name__ == '__main__':
     from policy import SwingUpAndBalancePolicy, RandomPolicy
     from visualization import Visualizer
     import cv2
+    # import random
 
     vis = Visualizer(cartpole_length=1.5, x_lim=(0.0, DELTA_T * NUM_DATAPOINTS_PER_EPOCH))
     swingup_policy = SwingUpAndBalancePolicy('policy.npz')
-    random_policy = RandomPolicy(seed=12831)
+    random_policy = RandomPolicy(random.randint(1, 100000))
     sim = CartpoleSim(dt=DELTA_T)
 
-    IMAGE_DATASET = True
+    IMAGE_DATASET = False
 
     if not IMAGE_DATASET:
-        NUM_DATAPOINTS = 11000
+        NUM_DATAPOINTS = 100
         '''
         we want numerical value data 
         '''
@@ -78,15 +80,17 @@ if __name__ == '__main__':
         TODO: write code to save numerical data (train_x, train_y)
         '''
         data = np.concatenate((train_x, train_y), axis=1)
-        np.savetxt('vanilla_dataset/data.csv', data, delimiter=',')
+        np.savetxt('vanilla_test_dataset/data.csv', data, delimiter=',')
         # method to load data
-        savedData = np.loadtxt('vanilla_dataset/data.csv', delimiter=',')
+        # savedData = np.loadtxt('vanilla_dataset/data.csv', delimiter=',')
+
+    IMAGE_DATASET = True
 
     if IMAGE_DATASET:
         import csv 
         import os
-        NUM_TRAINING_EPOCHS = 220 # multiply by 50 to get num. data points
-        PATH = "image_dataset/"
+        NUM_TRAINING_EPOCHS = 2 # multiply by 50 to get num. data points
+        PATH = "image_test_dataset/"
         '''
         we want image data
         '''
