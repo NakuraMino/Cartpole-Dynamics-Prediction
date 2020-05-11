@@ -53,7 +53,7 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
     x = np.array([augmented_state(state, action) for state, action in zip(state_traj, action_traj)])
     y = delta_state_traj
     return x, y
-
+  
 
 def make_test_data(test_x):
     '''
@@ -90,6 +90,7 @@ def predict_cartpole(test_x, init_state):
     # TODO: Declare your network and run test_x through your data
     # ex:
     
+
     NN = 'three'
     # lite, lite-er, heavy, four
     if NN == 'lite':
@@ -127,7 +128,7 @@ def predict_cartpole(test_x, init_state):
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
 
 
-if __name__ == '__main__':
+if __name__ != '__main__':
     # TODO: write scripts for this?
     '''
     CODE FOR TEST PURPOSES ONLY: compares the training loss with the test loss of the CNN
@@ -191,7 +192,7 @@ if __name__ == '__main__':
     print("test loss:", loss.item())
 
 
-if __name__ != '__main__':
+if __name__ == '__main__':
     import matplotlib.pyplot as plt
     plt.style.use('ggplot')
     from cartpole_sim import CartpoleSim
