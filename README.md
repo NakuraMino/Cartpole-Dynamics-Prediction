@@ -1,17 +1,15 @@
 # CSE571_Project1
 
-NOTE: before you work on anything, please set up a new branch for your own work. We can merge the branch with master if we want to, but I find it really hard to fix master once it becomes dirty. Thanks!
-
-For the TAs:
+Use the same conda environment as Homework 1, and also install pandas. 
 
 src/ contains the CNN used to predict the delta states of the cartpole. Run
 ```
 python cartpole_preds_with_nn.py
 ```
-To check out the architecture of CartpoleNetLite, checkout src/models/CartpoleNetLite.ipynb. 
+model/ contains the architectures of the CNNs.
 
-GPNet/ contains the other neural network. Like with the other neural network, run 
-```
-python cartpole_preds_with_nn.py
-```
-to see the GPNet in action. 
+GPNet/ is the practice neural network that was used to predict delta states given augmented states. 
+
+figures/ contains images used in presentation and the final report
+
+results/ shows videos of all four neural networks. 
