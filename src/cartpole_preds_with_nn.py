@@ -53,11 +53,11 @@ def make_training_data(state_traj, action_traj, delta_state_traj):
     x = np.array([augmented_state(state, action) for state, action in zip(state_traj, action_traj)])
     y = delta_state_traj
     return x, y
+  
 
 def make_test_data(test_x):
     '''
     takes in a 1x50x128x128 matrix 
-
     outputs a 46x1x5x128x128
     '''
     final_test_x = None
@@ -77,8 +77,6 @@ def predict_cartpole(test_x, init_state):
     """
     
     # TODO: import the file that contains your network architecture
-    
-    from cartpolenetlite import CartpoleNetLite
 
     M = test_x.shape[0]
     H = NUM_DATAPOINTS_PER_EPOCH
@@ -92,8 +90,29 @@ def predict_cartpole(test_x, init_state):
     # TODO: Declare your network and run test_x through your data
     # ex:
     
-    net = CartpoleNetLite() 
-    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+
+    NN = 'three'
+    # lite, lite-er, heavy, four
+    if NN == 'lite':
+        from cartpolenetlite import CartpoleNetLite
+        net = CartpoleNetLite()
+        net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'lite-er':
+        from cartpolenetlite_er import CartpoleNetLite_er
+        net = CartpoleNetLite_er()
+        net.load_state_dict(torch.load('./models/CartpoleNetLite_er.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'heavy':
+        from cartpolenet_heavy import CartpoleNetHeavy
+        net = CartpoleNetHeavy()
+        net.load_state_dict(torch.load('./models/CartpoleNetHeavy.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'four':
+        from cartFourNet import CartFourNet
+        net = CartFourNet()
+        net.load_state_dict(torch.load('./models/CartFourNet.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'three':
+        from cartThreeNet import CartThreeNet
+        net = CartThreeNet()
+        net.load_state_dict(torch.load('./models/CartThreeNet.pth', map_location="cpu"))  # loads the trained nn
     net.eval()
     output = net(test_x) # predicts output based on the input we gave
     pred_gp_mean[3:49,:] = output.detach().numpy() # stores the values onto pred_gp_mean
@@ -115,7 +134,6 @@ if __name__ != '__main__':
     CODE FOR TEST PURPOSES ONLY: compares the training loss with the test loss of the CNN
     '''
     import torch.nn as nn
-    from cartpolenetlite import CartpoleNetLite
     import sys
     sys.path.insert(1, '../nishant_experiments/')
     from dataloader import CartpoleDataset
@@ -127,8 +145,28 @@ if __name__ != '__main__':
     testing_dataset = CartpoleDataset('data.csv', path2, 5, H=128, W=128)
     
     criterion = nn.MSELoss()
-    net = CartpoleNetLite() 
-    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    NN = 'heavy'
+    # lite, lite-er, heavy, four
+    if NN == 'lite':
+        from cartpolenetlite import CartpoleNetLite
+        net = CartpoleNetLite()
+        net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'lite-er':
+        from cartpolenetlite_er import CartpoleNetLite_er
+        net = CartpoleNetLite_er()
+        net.load_state_dict(torch.load('./models/CartpoleNetLite_er.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'heavy':
+        from cartpolenet_heavy import CartpoleNetHeavy
+        net = CartpoleNetHeavy()
+        net.load_state_dict(torch.load('./models/CartpoleNetHeavy.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'four':
+        from cartFourNet import CartFourNet
+        net = CartFourNet()
+        net.load_state_dict(torch.load('./models/CartFourNet.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'three':
+        from cartThreeNet import CartThreeNet
+        net = CartThreeNet()
+        net.load_state_dict(torch.load('./models/CartThreeNet.pth', map_location="cpu"))  # loads the trained nn
     net.eval()
 
     epoch = np.random.randint(0, 100)
