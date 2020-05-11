@@ -127,13 +127,12 @@ def predict_cartpole(test_x, init_state):
     return pred_gp_mean, pred_gp_variance, rollout_gp, pred_gp_mean_trajs, pred_gp_variance_trajs, rollout_gp_trajs
 
 
-if __name__ != '__main__':
+if __name__ == '__main__':
     # TODO: write scripts for this?
     '''
     CODE FOR TEST PURPOSES ONLY: compares the training loss with the test loss of the CNN
     '''
     import torch.nn as nn
-    from cartpolenetlite import CartpoleNetLite
     import sys
     sys.path.insert(1, '../nishant_experiments/')
     from dataloader import CartpoleDataset
@@ -145,8 +144,28 @@ if __name__ != '__main__':
     testing_dataset = CartpoleDataset('data.csv', path2, 5, H=128, W=128)
     
     criterion = nn.MSELoss()
-    net = CartpoleNetLite() 
-    net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu")) # loads the trained nn
+    NN = 'heavy'
+    # lite, lite-er, heavy, four
+    if NN == 'lite':
+        from cartpolenetlite import CartpoleNetLite
+        net = CartpoleNetLite()
+        net.load_state_dict(torch.load('./models/CartpoleNet3.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'lite-er':
+        from cartpolenetlite_er import CartpoleNetLite_er
+        net = CartpoleNetLite_er()
+        net.load_state_dict(torch.load('./models/CartpoleNetLite_er.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'heavy':
+        from cartpolenet_heavy import CartpoleNetHeavy
+        net = CartpoleNetHeavy()
+        net.load_state_dict(torch.load('./models/CartpoleNetHeavy.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'four':
+        from cartFourNet import CartFourNet
+        net = CartFourNet()
+        net.load_state_dict(torch.load('./models/CartFourNet.pth', map_location="cpu"))  # loads the trained nn
+    elif NN == 'three':
+        from cartThreeNet import CartThreeNet
+        net = CartThreeNet()
+        net.load_state_dict(torch.load('./models/CartThreeNet.pth', map_location="cpu"))  # loads the trained nn
     net.eval()
 
     epoch = np.random.randint(0, 100)
@@ -172,7 +191,7 @@ if __name__ != '__main__':
     print("test loss:", loss.item())
 
 
-if __name__ == '__main__':
+if __name__ != '__main__':
     import matplotlib.pyplot as plt
     plt.style.use('ggplot')
     from cartpole_sim import CartpoleSim
