@@ -1,22 +1,5 @@
 # Predicting delta states from images with CNN
 
-## NN predictions compared to ground truth from the simulator
-- CartpoleNetLite
-
-https://user-images.githubusercontent.com/14308382/140626934-42114ecf-5f7b-486a-9bd5-d01ae91976e7.mov
-
-- CartpoleNetHeavy
-
-https://user-images.githubusercontent.com/14308382/140626941-025943ef-fd77-483b-abfc-24faadba17d2.mov
-
-- CartFourNet
-
-https://user-images.githubusercontent.com/14308382/140626950-14f66dda-0610-4ca1-b4f4-3809b76e7b68.mov
-
-- CartThreeNet
-
-https://user-images.githubusercontent.com/14308382/140626953-91b397ed-022d-4ddf-ac06-328e7acb61e3.mov
-
 ## Problem statement
 Given n-1 consecutive image frames before and including time instant t (i.e., t-n+1, ..., t) and 1 image from after (i.e., t+1) from a cartpole dynamics simulation, predict the delta state (dx, ddx, dtheta, ddtheta) between time instants t and t+1.
 ![Input: A sequence of five images. Output: Delta states](./figures/the%20problem.JPG)
@@ -27,14 +10,14 @@ Given n-1 consecutive image frames before and including time instant t (i.e., t-
 All input images are 128 x 128 grayscale images.
 
 We explored four neural networks: two versions for five input images (heavy and lite - to determine effect of NN size on NN predicted delta states MSE), and two versions lesser number of input images (4 and 3 - to determine effect of number of images on NN predicted delta states MSE)
-|-------------------------------|-----------------|------------------|-------------|--------------|
+
 |                               | CartpoleNetLite | CartpoleNetHeavy | CartFourNet | CartThreeNet |
 |-------------------------------|-----------------|------------------|-------------|--------------|
 | Conv3D layers                 |               3 |                4 |           4 |            4 |
 | Fully connected layers        |               3 |                5 |           5 |            5 |
 | number of input images        |               5 |                5 |           4 |            3 |
 | number of training iterations |             25k |              10k |         10k |          10k |
-|-------------------------------|-----------------|------------------|-------------|--------------|
+
 All neural networks use ReLU activation function, and Adam optimizer.
 
 #### CartpoleNetLite
@@ -184,6 +167,24 @@ Similar curves were observed for the other NNs too.
 ![Prediction from a Gaussian process](./figures/gp_output.jpg)
 - Deeper neural networks perform better than an equivalent "lite" version (eg. compare the videos for CartpoleNetLite and CartpoleNetHeavy). Also, NNs that take more number of images as inputs perform better than those that take in less number of images (eg. compare the videos for CartpoleNetLite, CartFourNet and CartThreeNet).
 ![Comparison of predictions from the different NNs](./figures/comparison.png)
+
+### NN predictions compared to ground truth from the simulator
+#### CartpoleNetLite
+
+https://user-images.githubusercontent.com/14308382/140626934-42114ecf-5f7b-486a-9bd5-d01ae91976e7.mov
+
+#### CartpoleNetHeavy
+
+https://user-images.githubusercontent.com/14308382/140626941-025943ef-fd77-483b-abfc-24faadba17d2.mov
+
+#### CartFourNet
+
+https://user-images.githubusercontent.com/14308382/140626950-14f66dda-0610-4ca1-b4f4-3809b76e7b68.mov
+
+#### CartThreeNet
+
+https://user-images.githubusercontent.com/14308382/140626953-91b397ed-022d-4ddf-ac06-328e7acb61e3.mov
+
 ### Limitations
 - The NNs can also not make predictions on its previous predictions due to the way the data is structured (unlike Gaussian processes).
 - The neural networks are not able to predict the (delta for first order derivatives, eg. velocity) dynamics well when the pole is not moving (eg. when it is at a standstill at an equilibrium).
