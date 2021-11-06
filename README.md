@@ -158,7 +158,7 @@ Similar curves were observed for the other NNs too.
 
 ## Results
 |               | CartpoleNetLite | CartpoleNetHeavy | CartFourNet | CartThreeNet |
-|---------------+-----------------+------------------+-------------+--------------|
+|---------------|-----------------|------------------|-------------|--------------|
 | test data MSE |         0.06464 |          0.00531 |     0.00855 |      0.10573 |
 
 - CartpoleNetLite is able to reliably predict the dynamics with a low MSE.
@@ -189,6 +189,7 @@ https://user-images.githubusercontent.com/14308382/140626953-91b397ed-022d-4ddf-
 - The NNs can also not make predictions on its previous predictions due to the way the data is structured (unlike Gaussian processes).
 - The neural networks are not able to predict the (delta for first order derivatives, eg. velocity) dynamics well when the pole is not moving (eg. when it is at a standstill at an equilibrium).
 ![Cartpole stands still, and the NN prediction diverges from ground truth](./figures/standstill.JPG)
+
 This could be due to several reasons:
   - During a standstill the last n frames may not contain enough information to determine the velocity. Ground truth ddx may be oscillating rapidly between small positive and negative values, but the CNN predicts ddx to be 0 since there is no movement of the cartpole. This makes it difficult to determine what the ddx values are in these circumstances.
   - It could also be possible that the training dataset does not contain enough number of a swing-up policy.
