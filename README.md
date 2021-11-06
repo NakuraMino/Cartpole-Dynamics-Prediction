@@ -154,6 +154,7 @@ We generated 2 epochs of 50 images each for the [testing dataset](./data/image_t
 - Training curve for CartpoleNetLite (complete training curve and averaged per 100 iterations):
 ![Training curve for CartpoleNetLite](./figures/learning_curve.png)
 ![Average MSE per 100 iterations](./figures/average%20per%20100%20iterations.png)
+
 Similar curves were observed for the other NNs too.
 
 ## Results
